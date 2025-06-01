@@ -2,3 +2,32 @@ Hello  !
 
 For this study, we're gonna study the evolutions of certain criterias given in online datasets that will allow us to use the knowledge we have about recruitments in order to answer relevant companies question and
 share our insights to hypothetic stakeholders.
+
+To begin with, we'll start by answering some simple question, following the APPASA method for our study : 
+
+1) What type of company does your client represent, and what are they asking you to accomplish?
+    --> Our hypothetic company represents a group of external recruitment agencies that wants to know recruitment trends for their potentiel budgets and
+        optimization of their activities for future investments and most importantly getting insights of predictions according to the latest evolutions.
+
+2) What are the key factors involved in the business task you are investigating?
+    --> The key factors represents the years, which will be the unique key used in most of the analysis
+
+3) What type of data will be appropriate for your analysis?
+    --> First, those we can find from open sources (obviously), sencond, datasets where we can compare factors like genders, type of jobs, age of the candidates, 
+        and many others, that will help us getting insights on how recruitment evolved in the past few years.
+
+4) Where will you obtain that data?
+    --> Mostly Kaggle, data.gov.fr
+
+5) Who is your audience, and what materials will help you present to them effectively?
+    --> They'recruitment experts, which is important for the message we want to communicate, because we might assume they can confirm our studies and insights from their
+        own experiences.
+
+*Following these questions, we will produce a report with the following deliverables*
+
+Business task : How did the job market evolve and how did they shift during the past few years ? What factors have been more important, and in opposite,
+which of them is now almost irrelevant in job interviews.
+
+Data sources : 
+Kaggle - Employee/HR Dataset (All in One) - Ravender Singh Rana [link] <https://www.kaggle.com/datasets/ravindrasinghrana/employeedataset>
+
