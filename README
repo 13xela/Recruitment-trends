@@ -31,3 +31,221 @@ which of them is now almost irrelevant in job interviews.
 Data sources : 
 Kaggle - Employee/HR Dataset (All in One) - Ravender Singh Rana [link] <https://www.kaggle.com/datasets/ravindrasinghrana/employeedataset>
 
+# -------------------------------
+# INSTALLATION & LIBRAIRIES
+# -------------------------------
+# install.packages("lubridate")
+# install.packages("stringr")
+# install.packages("ggplot2")
+# install.packages("dplyr")
+# install.packages("janitor")
+# install.packages("scales")
+# install.packages("RColorBrewer")
+
+library(lubridate)
+library(stringr)
+library(ggplot2)
+library(dplyr)
+library(janitor)
+library(scales)
+library(RColorBrewer)
+
+# -------------------------------
+# IMPORT DU JEU DE DONNÉES
+# -------------------------------
+employee_data <- read.csv("employee_data.csv")
+
+# Nettoyage des noms de colonnes
+employee_data <- clean_names(employee_data)
+
+# -------------------------------
+# NETTOYAGE DES DATES & EXTRACTION DE L'ANNÉE
+# -------------------------------
+employee_data <- employee_data %>%
+  mutate(
+    clean_date = str_replace_all(start_date, "\\.", ""),
+    clean_date = dmy(clean_date),
+    year = as.factor(year(clean_date))
+  )
+
+# -------------------------------
+# ENREGISTREMENT DES DONNÉES NETTOYÉES
+# -------------------------------
+write.csv(employee_data, "clean_employee_data.csv", row.names = FALSE)
+
+# -------------------------------
+# GRAPHIQUE 1 : Genre vs Année
+# -------------------------------
+ggplot(data = employee_data) +
+  geom_bar(aes(x = gender_code, fill = year)) +
+  labs(
+    title = "Évolution des recrutements en fonction du genre (2018-2023)",
+    subtitle = "Données récoltées par Ravender Singh Rana",
+    x = "Genre",
+    y = "Nombre"
+  ) +
+  theme_minimal()
+
+# -------------------------------
+# GRAPHIQUE 2 : Pourcentages genre par année
+# -------------------------------
+df_percent_gender <- employee_data %>%
+  group_by(year, gender_code) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(year) %>%
+  mutate(percent = count / sum(count) * 100)
+
+ggplot(df_percent_gender, aes(x = year, y = count, fill = gender_code)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(round(percent, 1), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 3, color = "white") +
+  scale_fill_manual(values = c("Female" = "#FF69B4", "Male" = "#1E90FF")) +
+  labs(
+    title = "Évolution des recrutements par genre (2018–2023)",
+    subtitle = "Données récoltées par Ravender Singh Rana",
+    x = "Année",
+    y = "Nombre",
+    fill = "Genre"
+  ) +
+  theme_minimal()
+
+# -------------------------------
+# GRAPHIQUE 3 : Score de performance par année
+# -------------------------------
+df_percent_perf <- employee_data %>%
+  group_by(year, performance_score) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(year) %>%
+  mutate(percent = count / sum(count) * 100)
+
+# Palette couleurs inversée (Bleu foncé = plus haut score)
+performance_levels <- sort(unique(df_percent_perf$performance_score))
+colors_asc <- brewer.pal(n = length(performance_levels), name = "Blues")
+colors_asc_inv <- rev(colors_asc)
+
+ggplot(df_percent_perf, aes(x = year, y = count, fill = performance_score)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(round(percent, 1), "%")),
+            position = position_stack(vjust = 0.5),
+            size = 3, color = "white") +
+  scale_fill_manual(values = setNames(colors_asc_inv, performance_levels)) +
+  labs(
+    title = "Évolution des scores de performances des personnes recrutées par an",
+    subtitle = "Données récoltées par Ravender Singh Rana",
+    x = "Année",
+    y = "Nombre",
+    fill = "Score de performance"
+  ) +
+  theme_minimal()
+
+# -------------------------------
+# GRAPHIQUE 4 : Catégories raciales par année avec pourcentages
+# -------------------------------
+light_colors <- c(
+  "White" = "#D3D3D3",
+  "Black or African American" = "#A9A9A9",
+  "Hispanic" = "#F4A582",
+  "Asian" = "#92C5DE",
+  "Two or More Races" = "#B3B3CC",
+  "American Indian or Alaska Native" = "#E0CFA9",
+  "Native Hawaiian or Other Pacific Islander" = "#B2DFDB",
+  "Other" = "#D9D9D9"
+)
+
+df_race_percent <- employee_data %>%
+  group_by(year, race_desc) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(year) %>%
+  mutate(percent = count / sum(count) * 100)
+
+ggplot(df_race_percent, aes(x = factor(year), y = count, fill = race_desc)) +
+  geom_bar(stat = "identity") +
+  geom_text(
+    aes(label = paste0(round(percent, 1), "%")),
+    position = position_stack(vjust = 0.5),
+    size = 3.2,
+    color = "black"
+  ) +
+  scale_fill_manual(values = light_colors) +
+  labs(
+    title = "Évolution des catégories raciales recrutées au cours des dernières années",
+    subtitle = "Données récoltées par Ravender Singh Rana",
+    x = "Année",
+    y = "Nombre",
+    fill = "Catégorie raciale"
+  ) +
+  theme_minimal()
+
+# -------------------------------
+# GRAPHIQUE 5 : Top 10 postes + "Autres" par année (courbe)
+# -------------------------------
+top_n <- 10
+
+top_jobs <- employee_data %>%
+  count(job_function_description) %>%
+  arrange(desc(n)) %>%
+  slice_head(n = top_n) %>%
+  pull(job_function_description)
+
+employee_data <- employee_data %>%
+  mutate(job_grouped = ifelse(job_function_description %in% top_jobs,
+                              job_function_description,
+                              "Autres"))
+
+df_line <- employee_data %>%
+  group_by(year, job_grouped) %>%
+  summarise(count = n(), .groups = "drop")
+
+ggplot(df_line, aes(x = as.numeric(as.character(year)), y = count, color = job_grouped)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Évolution des recrutements par poste (Top 10 + Autres)",
+    subtitle = "Données récoltées par Ravender Singh Rana",
+    x = "Année",
+    y = "Nombre de recrutements",
+    color = "Poste"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(breaks = unique(as.numeric(as.character(df_line$year)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# -------------------------------
+# GRAPHIQUE 6 : Recrutements par secteur d'activité avec pourcentages
+# -------------------------------
+df_percent_dept <- employee_data %>%
+  group_by(year, department_type) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(year) %>%
+  mutate(percent = count / sum(count))
+
+palette_colors <- c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C")
+
+ggplot(df_percent_dept, aes(x = year, y = count, fill = department_type)) +
+  geom_bar(stat = "identity", color = "black", size = 0.2) +
+  geom_text(aes(label = ifelse(percent > 0.05, scales::percent(percent, accuracy = 0.1), "")),
+            position = position_stack(vjust = 0.5),
+            size = 3,
+            color = "black",
+            fontface = "bold") +
+  scale_fill_manual(values = palette_colors) +
+  labs(
+    title = "Évolution des recrutements par secteur d'activité",
+    subtitle = "Données récoltées par Ravender Singh Rana",
+    x = "Année",
+    y = "Nombre de recrutements",
+    fill = "Secteur d'activité"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.title = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+
